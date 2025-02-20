@@ -2,40 +2,25 @@ import React from "react";
 import { Card } from "./ui/card";
 import { Button } from "./ui/button";
 import { Save } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import BasicInfoSection from "./BasicInfoSection";
 import EnvironmentalSection from "./EnvironmentalSection";
 import TastingNotesSection from "./TastingNotesSection";
 import RatingDashboard from "./RatingDashboard";
+import {
+  saveCigarEntry,
+  updateCigarEntry,
+  getCigarEntry,
+  type CigarEntry,
+} from "../lib/storage";
 
 interface CigarEntryFormProps {
-  onSubmit?: (formData: CigarEntryData) => void;
-  initialData?: Partial<CigarEntryData>;
+  onSubmit?: (formData: CigarEntry) => void;
+  initialData?: Partial<CigarEntry>;
 }
 
-interface CigarEntryData {
-  basicInfo: {
-    brand: string;
-    name: string;
-    wrapperType: string;
-    binder: string;
-    filler: string;
-    price: string;
-  };
-  environmental: {
-    date: Date;
-    humidity: number;
-  };
-  tastingNotes: string;
-  ratings: {
-    taste: number;
-    construction: number;
-    value: number;
-    bandAesthetics: number;
-  };
-}
-
-const defaultData: CigarEntryData = {
+const defaultData: Omit<CigarEntry, "id"> = {
+  date: new Date(),
   basicInfo: {
     brand: "",
     name: "",
@@ -61,10 +46,21 @@ const CigarEntryForm = ({
   onSubmit = () => {},
   initialData = defaultData,
 }: CigarEntryFormProps) => {
-  const [formData, setFormData] = React.useState<CigarEntryData>({
-    ...defaultData,
-    ...initialData,
-  });
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const [formData, setFormData] = React.useState<typeof defaultData>(
+    initialData as typeof defaultData,
+  );
+
+  React.useEffect(() => {
+    if (id) {
+      const entry = getCigarEntry(id);
+      if (entry) {
+        const { id: _, ...data } = entry;
+        setFormData(data);
+      }
+    }
+  }, [id]);
 
   const handleBasicInfoChange = (basicInfo: typeof defaultData.basicInfo) => {
     setFormData((prev) => ({ ...prev, basicInfo }));
@@ -94,11 +90,14 @@ const CigarEntryForm = ({
     }));
   };
 
-  const navigate = useNavigate();
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSubmit(formData);
+    if (id) {
+      updateCigarEntry(id, formData);
+    } else {
+      saveCigarEntry(formData);
+    }
+    onSubmit(formData as CigarEntry);
     navigate("/");
   };
 

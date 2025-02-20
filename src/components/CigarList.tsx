@@ -3,59 +3,35 @@ import { Card } from "./ui/card";
 import { Button } from "./ui/button";
 import { Edit, Star } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-
-interface CigarEntry {
-  id: string;
-  date: Date;
-  basicInfo: {
-    brand: string;
-    name: string;
-  };
-  ratings: {
-    taste: number;
-    construction: number;
-    value: number;
-    bandAesthetics: number;
-  };
-}
+import { getCigarEntries, type CigarEntry } from "../lib/storage";
 
 interface CigarListProps {
   entries?: CigarEntry[];
 }
 
-const defaultEntries: CigarEntry[] = [
-  {
-    id: "1",
-    date: new Date(),
-    basicInfo: {
-      brand: "Cohiba",
-      name: "Behike",
-    },
-    ratings: {
-      taste: 5,
-      construction: 4,
-      value: 4,
-      bandAesthetics: 5,
-    },
-  },
-  {
-    id: "2",
-    date: new Date(Date.now() - 86400000),
-    basicInfo: {
-      brand: "Padron",
-      name: "1926 Series",
-    },
-    ratings: {
-      taste: 5,
-      construction: 5,
-      value: 4,
-      bandAesthetics: 4,
-    },
-  },
-];
-
-const CigarList = ({ entries = defaultEntries }: CigarListProps) => {
+const CigarList = ({ entries: propEntries }: CigarListProps) => {
   const navigate = useNavigate();
+  const [entries, setEntries] = React.useState<CigarEntry[]>([]);
+
+  // Refresh entries when component mounts or location changes
+  const refreshEntries = React.useCallback(() => {
+    if (propEntries) {
+      setEntries(propEntries);
+    } else {
+      setEntries(getCigarEntries());
+    }
+  }, [propEntries]);
+
+  React.useEffect(() => {
+    refreshEntries();
+  }, [refreshEntries]);
+
+  // Also refresh when the component becomes visible
+  React.useEffect(() => {
+    const handleFocus = () => refreshEntries();
+    window.addEventListener("focus", handleFocus);
+    return () => window.removeEventListener("focus", handleFocus);
+  }, [refreshEntries]);
 
   const getAverageRating = (ratings: CigarEntry["ratings"]) => {
     const values = Object.values(ratings);

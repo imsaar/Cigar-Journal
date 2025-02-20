@@ -3,41 +3,33 @@ import { useParams, useNavigate } from "react-router-dom";
 import { Card } from "./ui/card";
 import { Button } from "./ui/button";
 import { Edit, ArrowLeft, Star } from "lucide-react";
+import { getCigarEntry, type CigarEntry } from "../lib/storage";
 
 interface CigarDetailProps {
-  entry?: any; // Replace with your entry type
+  entry?: CigarEntry;
 }
 
-const CigarDetail = ({ entry }: CigarDetailProps) => {
+const CigarDetail = ({ entry: propEntry }: CigarDetailProps) => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const [entry, setEntry] = React.useState<CigarEntry | null>(
+    propEntry || null,
+  );
 
-  // This would be replaced with actual data fetching
-  const mockEntry = {
-    id,
-    date: new Date(),
-    basicInfo: {
-      brand: "Cohiba",
-      name: "Behike",
-      wrapperType: "Maduro",
-      binder: "Dominican",
-      filler: "Dominican, Nicaraguan",
-      price: "$30.00",
-    },
-    environmental: {
-      humidity: 65,
-    },
-    tastingNotes:
-      "Rich notes of dark chocolate and espresso, with hints of leather and cedar...",
-    ratings: {
-      taste: 5,
-      construction: 4,
-      value: 4,
-      bandAesthetics: 5,
-    },
-  };
+  React.useEffect(() => {
+    if (!propEntry && id) {
+      const found = getCigarEntry(id);
+      if (found) setEntry(found);
+    }
+  }, [propEntry, id]);
 
-  const displayEntry = entry || mockEntry;
+  if (!entry) {
+    return (
+      <div className="min-h-screen bg-[#292524] p-6 flex items-center justify-center">
+        <p className="text-amber-500">Entry not found</p>
+      </div>
+    );
+  }
 
   const getAverageRating = (ratings: Record<string, number>) => {
     const values = Object.values(ratings);
@@ -57,7 +49,7 @@ const CigarDetail = ({ entry }: CigarDetailProps) => {
             Back to List
           </Button>
           <Button
-            onClick={() => navigate(`/edit/${id}`)}
+            onClick={() => navigate(`/edit/${entry.id}`)}
             className="bg-amber-600 hover:bg-amber-700 text-white"
           >
             <Edit className="w-4 h-4 mr-2" />
@@ -69,16 +61,14 @@ const CigarDetail = ({ entry }: CigarDetailProps) => {
           <div className="flex justify-between items-start mb-6">
             <div>
               <h1 className="text-3xl font-bold text-amber-900 mb-2">
-                {displayEntry.basicInfo.brand} {displayEntry.basicInfo.name}
+                {entry.basicInfo.brand} {entry.basicInfo.name}
               </h1>
-              <p className="text-gray-600">
-                {displayEntry.date.toLocaleDateString()}
-              </p>
+              <p className="text-gray-600">{entry.date.toLocaleDateString()}</p>
             </div>
             <div className="flex items-center bg-amber-100 px-3 py-1 rounded-full">
               <Star className="w-5 h-5 text-amber-600 fill-current" />
               <span className="ml-1 font-semibold text-amber-900">
-                {getAverageRating(displayEntry.ratings)}
+                {getAverageRating(entry.ratings)}
               </span>
             </div>
           </div>
@@ -91,32 +81,24 @@ const CigarDetail = ({ entry }: CigarDetailProps) => {
               <dl className="space-y-2">
                 <div className="flex justify-between">
                   <dt className="text-gray-600">Wrapper Type:</dt>
-                  <dd className="font-medium">
-                    {displayEntry.basicInfo.wrapperType}
-                  </dd>
+                  <dd className="font-medium">{entry.basicInfo.wrapperType}</dd>
                 </div>
                 <div className="flex justify-between">
                   <dt className="text-gray-600">Binder:</dt>
-                  <dd className="font-medium">
-                    {displayEntry.basicInfo.binder}
-                  </dd>
+                  <dd className="font-medium">{entry.basicInfo.binder}</dd>
                 </div>
                 <div className="flex justify-between">
                   <dt className="text-gray-600">Filler:</dt>
-                  <dd className="font-medium">
-                    {displayEntry.basicInfo.filler}
-                  </dd>
+                  <dd className="font-medium">{entry.basicInfo.filler}</dd>
                 </div>
                 <div className="flex justify-between">
                   <dt className="text-gray-600">Price:</dt>
-                  <dd className="font-medium">
-                    {displayEntry.basicInfo.price}
-                  </dd>
+                  <dd className="font-medium">{entry.basicInfo.price}</dd>
                 </div>
                 <div className="flex justify-between">
                   <dt className="text-gray-600">Humidity:</dt>
                   <dd className="font-medium">
-                    {displayEntry.environmental.humidity}%
+                    {entry.environmental.humidity}%
                   </dd>
                 </div>
               </dl>
@@ -127,7 +109,7 @@ const CigarDetail = ({ entry }: CigarDetailProps) => {
                 Ratings
               </h3>
               <dl className="space-y-2">
-                {Object.entries(displayEntry.ratings).map(([key, value]) => (
+                {Object.entries(entry.ratings).map(([key, value]) => (
                   <div key={key} className="flex justify-between items-center">
                     <dt className="text-gray-600 capitalize">{key}:</dt>
                     <dd className="flex items-center">
@@ -151,7 +133,7 @@ const CigarDetail = ({ entry }: CigarDetailProps) => {
               Tasting Notes
             </h3>
             <p className="text-gray-700 leading-relaxed">
-              {displayEntry.tastingNotes}
+              {entry.tastingNotes}
             </p>
           </div>
         </Card>
